@@ -379,24 +379,29 @@ struct BreedingRecordPayload {
     offspring_count: u64,
 }
 
+// Helper function to increment ID
+fn increment_id() -> u64 {
+    ID_COUNTER.with(|counter| {
+        let current_value = *counter.borrow().get();
+        counter
+            .borrow_mut()
+            .set(current_value + 1)
+            .expect("Failed to increment ID counter");
+        current_value + 1
+    })
+}
+
 // Functions to create and get entities
 
 #[ic_cdk::update]
 fn add_pig(payload: PigPayload) -> Result<Pig, String> {
     // Validate the payload
     if payload.name.is_empty() || payload.breed.is_empty() || payload.health_status.is_empty() {
-        return Err("Name, breed and health status are required fields".to_string());
+        return Err("Name, breed, and health status are required fields".to_string());
     }
 
     // Create a new pig
-    let id = ID_COUNTER.with(|counter| {
-        let current_value = *counter.borrow().get();
-        counter
-            .borrow_mut()
-            .set(current_value + 1)
-            .expect("Failed to increment ID counter");
-        current_value
-    });
+    let id = increment_id();
 
     let pig = Pig::new(
         id,
@@ -412,7 +417,6 @@ fn add_pig(payload: PigPayload) -> Result<Pig, String> {
     Ok(pig)
 }
 
-// Function to update a pig
 #[ic_cdk::update]
 fn update_pig(id: u64, payload: PigPayload) -> Result<Pig, String> {
     // Validate the pig_id
@@ -422,7 +426,7 @@ fn update_pig(id: u64, payload: PigPayload) -> Result<Pig, String> {
 
     // Validate the payload
     if payload.name.is_empty() || payload.breed.is_empty() || payload.health_status.is_empty() {
-        return Err("Name, breed and health status are required fields".to_string());
+        return Err("Name, breed, and health status are required fields".to_string());
     }
 
     // Update the pig
@@ -456,6 +460,13 @@ fn get_all_pigs() -> Result<Vec<Pig>, String> {
     })
 }
 
+#[ic_cdk::query]
+fn get_pig_by_id(pig_id: u64) -> Result<Pig, String> {
+    PIGS_STORAGE.with(|storage| {
+        storage.borrow().get(&pig_id).ok_or_else(|| "Pig not found".to_string())
+    })
+}
+
 #[ic_cdk::update]
 fn create_feed(payload: FeedPayload) -> Result<Feed, String> {
     // Validate the payload
@@ -468,14 +479,7 @@ fn create_feed(payload: FeedPayload) -> Result<Feed, String> {
         return Err("Pig not found".to_string());
     }
 
-    let id = ID_COUNTER.with(|counter| {
-        let current_value = *counter.borrow().get();
-        counter
-            .borrow_mut()
-            .set(current_value + 1)
-            .expect("Failed to increment ID counter");
-        current_value
-    });
+    let id = increment_id();
     let feed = Feed::new(
         id,
         payload.pig_id,
@@ -503,6 +507,13 @@ fn get_all_feeds() -> Result<Vec<Feed>, String> {
     })
 }
 
+#[ic_cdk::query]
+fn get_feed_by_id(feed_id: u64) -> Result<Feed, String> {
+    FEEDS_STORAGE.with(|storage| {
+        storage.borrow().get(&feed_id).ok_or_else(|| "Feed not found".to_string())
+    })
+}
+
 #[ic_cdk::update]
 fn create_health_record(payload: HealthRecordPayload) -> Result<HealthRecord, String> {
     // Validate the payload
@@ -516,14 +527,7 @@ fn create_health_record(payload: HealthRecordPayload) -> Result<HealthRecord, St
     }
 
     // Create a new health record
-    let id = ID_COUNTER.with(|counter| {
-        let current_value = *counter.borrow().get();
-        counter
-            .borrow_mut()
-            .set(current_value + 1)
-            .expect("Failed to increment ID counter");
-        current_value
-    });
+    let id = increment_id();
     let health_record = HealthRecord::new(
         id,
         payload.pig_id,
@@ -555,21 +559,21 @@ fn get_all_health_records() -> Result<Vec<HealthRecord>, String> {
     })
 }
 
+#[ic_cdk::query]
+fn get_health_record_by_id(record_id: u64) -> Result<HealthRecord, String> {
+    HEALTH_RECORDS_STORAGE.with(|storage| {
+        storage.borrow().get(&record_id).ok_or_else(|| "Health record not found".to_string())
+    })
+}
+
 #[ic_cdk::update]
 fn add_inventory_item(payload: InventoryPayload) -> Result<Inventory, String> {
     // Validate the payload
     if payload.item_name.is_empty() || payload.quantity == 0 || payload.cost == 0.0 {
-        return Err("Item name, quantity and cost are required fields".to_string());
+        return Err("Item name, quantity, and cost are required fields".to_string());
     }
 
-    let id = ID_COUNTER.with(|counter| {
-        let current_value = *counter.borrow().get();
-        counter
-            .borrow_mut()
-            .set(current_value + 1)
-            .expect("Failed to increment ID counter");
-        current_value
-    });
+    let id = increment_id();
     let inventory = Inventory::new(id, payload.item_name, payload.quantity, payload.cost);
     INVENTORY_STORAGE.with(|storage| storage.borrow_mut().insert(inventory.id, inventory.clone()));
     Ok(inventory)
@@ -591,6 +595,13 @@ fn get_all_inventory_items() -> Result<Vec<Inventory>, String> {
     })
 }
 
+#[ic_cdk::query]
+fn get_inventory_item_by_id(item_id: u64) -> Result<Inventory, String> {
+    INVENTORY_STORAGE.with(|storage| {
+        storage.borrow().get(&item_id).ok_or_else(|| "Inventory item not found".to_string())
+    })
+}
+
 #[ic_cdk::update]
 fn create_invoice(payload: InvoicePayload) -> Result<Invoice, String> {
     // Validate the payload
@@ -604,20 +615,12 @@ fn create_invoice(payload: InvoicePayload) -> Result<Invoice, String> {
     }
 
     // Create a new invoice
-    let id = ID_COUNTER.with(|counter| {
-        let current_value = *counter.borrow().get();
-        counter
-            .borrow_mut()
-            .set(current_value + 1)
-            .expect("Failed to increment ID counter");
-        current_value
-    });
+    let id = increment_id();
     let invoice = Invoice::new(id, payload.customer_id, payload.amount, payload.date);
     INVOICES_STORAGE.with(|storage| storage.borrow_mut().insert(invoice.id, invoice.clone()));
     Ok(invoice)
 }
 
-// Function to get all invoices for a customer(customer_id)
 #[ic_cdk::query]
 fn get_all_invoices(customer_id: u64) -> Result<Vec<Invoice>, String> {
     INVOICES_STORAGE.with(|storage| {
@@ -635,6 +638,13 @@ fn get_all_invoices(customer_id: u64) -> Result<Vec<Invoice>, String> {
     })
 }
 
+#[ic_cdk::query]
+fn get_invoice_by_id(invoice_id: u64) -> Result<Invoice, String> {
+    INVOICES_STORAGE.with(|storage| {
+        storage.borrow().get(&invoice_id).ok_or_else(|| "Invoice not found".to_string())
+    })
+}
+
 #[ic_cdk::update]
 fn create_notification(payload: NotificationPayload) -> Result<Notification, String> {
     // Validate the payload
@@ -648,14 +658,7 @@ fn create_notification(payload: NotificationPayload) -> Result<Notification, Str
     }
 
     // Create a new notification
-    let id = ID_COUNTER.with(|counter| {
-        let current_value = *counter.borrow().get();
-        counter
-            .borrow_mut()
-            .set(current_value + 1)
-            .expect("Failed to increment ID counter");
-        current_value
-    });
+    let id = increment_id();
     let notification = Notification::new(id, payload.customer_id, payload.message, time());
     NOTIFICATIONS_STORAGE.with(|storage| {
         storage
@@ -665,7 +668,6 @@ fn create_notification(payload: NotificationPayload) -> Result<Notification, Str
     Ok(notification)
 }
 
-// Function to get all notifications for a user
 #[ic_cdk::query]
 fn get_all_notifications(customer_id: u64) -> Result<Vec<Notification>, String> {
     NOTIFICATIONS_STORAGE.with(|storage| {
@@ -680,6 +682,13 @@ fn get_all_notifications(customer_id: u64) -> Result<Vec<Notification>, String> 
         } else {
             Ok(notifications)
         }
+    })
+}
+
+#[ic_cdk::query]
+fn get_notification_by_id(notification_id: u64) -> Result<Notification, String> {
+    NOTIFICATIONS_STORAGE.with(|storage| {
+        storage.borrow().get(&notification_id).ok_or_else(|| "Notification not found".to_string())
     })
 }
 
@@ -703,14 +712,7 @@ fn create_breeding_record(payload: BreedingRecordPayload) -> Result<BreedingReco
     }
 
     // Create a new breeding record
-    let id = ID_COUNTER.with(|counter| {
-        let current_value = *counter.borrow().get();
-        counter
-            .borrow_mut()
-            .set(current_value + 1)
-            .expect("Failed to increment ID counter");
-        current_value
-    });
+    let id = increment_id();
     let breeding_record = BreedingRecord::new(
         id,
         payload.pig_id,
@@ -726,7 +728,6 @@ fn create_breeding_record(payload: BreedingRecordPayload) -> Result<BreedingReco
     Ok(breeding_record)
 }
 
-// Function to fetch breeding records for a specific pig(pig_id)
 #[ic_cdk::query]
 fn get_breeding_records(pig_id: u64) -> Result<Vec<BreedingRecord>, String> {
     BREEDING_RECORDS_STORAGE.with(|storage| {
@@ -744,7 +745,6 @@ fn get_breeding_records(pig_id: u64) -> Result<Vec<BreedingRecord>, String> {
     })
 }
 
-// Function to fetch breeding records for a specific pig(mate_id)
 #[ic_cdk::query]
 fn get_mate_breeding_records(mate_id: u64) -> Result<Vec<BreedingRecord>, String> {
     BREEDING_RECORDS_STORAGE.with(|storage| {
@@ -762,7 +762,6 @@ fn get_mate_breeding_records(mate_id: u64) -> Result<Vec<BreedingRecord>, String
     })
 }
 
-// Function to get all breeding records
 #[ic_cdk::query]
 fn get_all_breeding_records() -> Result<Vec<BreedingRecord>, String> {
     BREEDING_RECORDS_STORAGE.with(|storage| {
@@ -776,6 +775,13 @@ fn get_all_breeding_records() -> Result<Vec<BreedingRecord>, String> {
         } else {
             Ok(records)
         }
+    })
+}
+
+#[ic_cdk::query]
+fn get_breeding_record_by_id(record_id: u64) -> Result<BreedingRecord, String> {
+    BREEDING_RECORDS_STORAGE.with(|storage| {
+        storage.borrow().get(&record_id).ok_or_else(|| "Breeding record not found".to_string())
     })
 }
 

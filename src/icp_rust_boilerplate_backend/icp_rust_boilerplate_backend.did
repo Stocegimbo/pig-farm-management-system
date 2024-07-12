@@ -117,7 +117,14 @@ service : {
   get_all_invoices : (nat64) -> (Result_11) query;
   get_all_notifications : (nat64) -> (Result_12) query;
   get_all_pigs : () -> (Result_13) query;
+  get_breeding_record_by_id : (nat64) -> (Result_2) query;
   get_breeding_records : (nat64) -> (Result_7) query;
+  get_feed_by_id : (nat64) -> (Result_3) query;
+  get_health_record_by_id : (nat64) -> (Result_4) query;
+  get_inventory_item_by_id : (nat64) -> (Result) query;
+  get_invoice_by_id : (nat64) -> (Result_5) query;
   get_mate_breeding_records : (nat64) -> (Result_7) query;
+  get_notification_by_id : (nat64) -> (Result_6) query;
+  get_pig_by_id : (nat64) -> (Result_1) query;
   update_pig : (nat64, PigPayload) -> (Result_1);
 }
